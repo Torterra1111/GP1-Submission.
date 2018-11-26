@@ -58,7 +58,7 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	theAreaClicked = { 0, 0 };
 	// Store the textures
 	textureName = { "sea", "bottle", "ship","theBackground", "OpeningScreen", "ClosingScreen"}; //I WILL NEED TO ADD SHIPUP,SHIPDOWN,SHIPLEFT,SHIPRIGHT
-	texturesToUse = { "Images/Sprites/Space.png", "Images/Sprites/Ore.png", "Images/Sprites/Rocket.png", "Images/Bkg/Bkgnd1.png", "Images/Bkg/OpeningScreenF.png", "Images/Bkg/ClosingScreenF.png" }; //Changed the sprites to fit my game.
+	texturesToUse = { "Images/Sprites/Space.png", "Images/Sprites/Ore.png", "Images/Sprites/Rocket.png", "Images/Bkg/BkgndA.png", "Images/Bkg/OpeningScreenF1.png", "Images/Bkg/ClosingScreenF1.png" }; //Changed the sprites to fit my game.
 	for (unsigned int tCount = 0; tCount < textureName.size(); tCount++)
 	{	
 		theTextureMgr->addTexture(textureName[tCount], texturesToUse[tCount]);
@@ -108,7 +108,7 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	// Load game sounds
 	soundList = { "theme", "click","Collect" };  //IMPORTANT
 	soundTypes = { soundType::music, soundType::sfx,soundType::sfx };
-	soundsToUse = { "Audio/Theme/Kevin_MacLeod_-_Winter_Reflections.wav", "Audio/SFX/ClickOn.wav","Audio/SFX/Bounce.wav" };
+	soundsToUse = { "Audio/Theme/Kevin_MacLeod_-_Winter_Reflections.wav", "Audio/SFX/ClickOn.wav","Audio/SFX/Collect.wav" };
 	for (unsigned int sounds = 0; sounds < soundList.size(); sounds++)
 	{
 		theSoundMgr->add(soundList[sounds], soundsToUse[sounds], soundTypes[sounds]);
@@ -189,7 +189,7 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		pos = { 600, 10, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
 		theTileMap.render(theSDLWND, theRenderer, theTextureMgr, textureName);
-		//theTileMap.renderGridLines(theRenderer, aRect, aColour); Removed grid lines as it takes away from the game experience.
+		theTileMap.renderGridLines(theRenderer, aRect, aColour); 
 		theButtonMgr->getBtn("exit_btn")->setSpritePos({ 935, 700 }); //Edited the button to fit my game board.
 		theButtonMgr->getBtn("exit_btn")->render(theRenderer, &theButtonMgr->getBtn("exit_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("exit_btn")->getSpritePos(), theButtonMgr->getBtn("exit_btn")->getSpriteScale());
 		

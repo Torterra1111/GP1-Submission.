@@ -49,26 +49,22 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	theFontMgr->initFontLib();
 	theSoundMgr->initMixer();
 
-	/* Let the computer pick a random number */
-	random_device rd;    // non-deterministic engine 
-	mt19937 gen{ rd() }; // deterministic engine. For most common uses, std::mersenne_twister_engine, fast and high-quality.
-	uniform_int_distribution<> spriteRandom{ 0, 9 };
 	
 	//OpeningScreenF.
 	theAreaClicked = { 0, 0 };
 	// Store the textures
-	textureName = { "sea", "bottle", "ship","theBackground", "OpeningScreen", "ClosingScreen"}; //I WILL NEED TO ADD SHIPUP,SHIPDOWN,SHIPLEFT,SHIPRIGHT
-	texturesToUse = { "Images/Sprites/Space.png", "Images/Sprites/Ore.png", "Images/Sprites/Rocket.png", "Images/Bkg/BkgndA.png", "Images/Bkg/OpeningScreenF1.png", "Images/Bkg/ClosingScreenF1.png" }; //Changed the sprites to fit my game.
+	textureName = { "sea", "bottle", "ship","theBackground", "OpeningScreen", "ClosingScreen","Asteroid"}; 
+	texturesToUse = { "Images/Sprites/Space.png", "Images/Sprites/Ore.png", "Images/Sprites/Rocket.png", "Images/Bkg/BkgndA.png", "Images/Bkg/ClosingScreenF1.png", "Images/Bkg/ClosingScreenF1.png","Images/Sprites/Asteroid.png" }; //Changed the sprites to fit my game.
 	for (unsigned int tCount = 0; tCount < textureName.size(); tCount++)
 	{	
 		theTextureMgr->addTexture(textureName[tCount], texturesToUse[tCount]);
 	}
 	tempTextTexture = theTextureMgr->getTexture("sea");
 	aRect = { 0, 0, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
-	aColour = { 228, 213, 238, 255 };
+	aColour = { 0, 255, 255, 255 };
 	// Store the textures
-	btnNameList = { "exit_btn", "instructions_btn", "load_btn", "menu_btn", "play_btn", "save_btn", "settings_btn" };
-	btnTexturesToUse = { "Images/Buttons/button_exit.png", "Images/Buttons/button_instructions.png", "Images/Buttons/button_load.png", "Images/Buttons/button_menu.png", "Images/Buttons/button_play.png", "Images/Buttons/button_save.png", "Images/Buttons/button_settings.png" };
+	btnNameList = { "exit_btn", "instructions_btn", "load_btn", "menu_btn", "play_btn", "save_btn", "settings_btn" }; //"Highscore_btn""
+	btnTexturesToUse = { "Images/Buttons/button_exit.png", "Images/Buttons/button_instructions.png", "Images/Buttons/button_load.png", "Images/Buttons/button_menu.png", "Images/Buttons/button_play.png", "Images/Buttons/button_save.png", "Images/Buttons/button_settings.png" }; //"Images/Buttons/Button_settings.png"
 	btnPos = { { 400, 375 }, { 400, 300 }, { 400, 300 }, { 500, 500 }, { 400, 300 }, { 740, 500 }, { 400, 300 } };
 	for (unsigned int bCount = 0; bCount < btnNameList.size(); bCount++)
 	{
@@ -115,24 +111,33 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	}
 
 	theSoundMgr->getSnd("theme")->play(-1);
+	theTileMap.setMapStartXY({ 150,100 });
 
 	spriteBkgd.setSpritePos({ 0, 0 });
 	spriteBkgd.setTexture(theTextureMgr->getTexture("OpeningScreen"));
 	spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("OpeningScreen")->getTWidth(), theTextureMgr->getTexture("OpeningScreen")->getTHeight());
-
-	theTileMap.setMapStartXY({ 150, 100 });
-	theShip.setMapPosition(spriteRandom(gen), spriteRandom(gen));
-	theBottle.genRandomPos(theShip.getMapPosition().R, theShip.getMapPosition().C);
-	theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation()); //IMPORTANT
-	theTileMap.update(theBottle.getMapPosition(), 2, theBottle.getBottleRotation()); //IMPORTANT
-
+	
+	//SCORE SETUP
 	bottlesCollected = 0;
 	strScore = gameTextList[gameTextList.size() - 1];
 	strScore += to_string(bottlesCollected).c_str();
 	theTextureMgr->deleteTexture("BottleCount");
+	
+	Gameover = false;
+
+	ifstream myfile("Files/Highscore.txt");
+	if (myfile.is_open())
+		{
+			myfile >> Checkscore;
+			myfile.close();
+		}
+	else
+	{
+		cout << "Unable to open";
+	}
 }
 
-void cGame::run(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
+	void cGame::run(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 {
 	loop = true;
 
@@ -168,14 +173,17 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
 		// Render Button
 		theButtonMgr->getBtn("play_btn")->render(theRenderer, &theButtonMgr->getBtn("play_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("play_btn")->getSpritePos(), theButtonMgr->getBtn("play_btn")->getSpriteScale());
-		theButtonMgr->getBtn("exit_btn")->setSpritePos({ 400, 375 });
+		theButtonMgr->getBtn("exit_btn")->setSpritePos({ 400, 425 }); //Moved to fit my game.
 		theButtonMgr->getBtn("exit_btn")->render(theRenderer, &theButtonMgr->getBtn("exit_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("exit_btn")->getSpritePos(), theButtonMgr->getBtn("exit_btn")->getSpriteScale());
-		
+		//theButtonMgr->getBtn("Highscore_btn")->render(theRenderer, &theButtonMgr->getBtn("Highscore_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("Highscore_btn")->getSpritePos(), theButtonMgr->getBtn("Highscore_btn")->getSpriteScale());
+		//^ Should Load the Highscore Button \/ Should Set its possition
+		// theButtonMgr->getBtn("Highscore_btn")->setSpritePos({ 400, 375 });
 		//This changes the background
 		spriteBkgd.setSpritePos({ 0, 0 });
 		spriteBkgd.setTexture(theTextureMgr->getTexture("OpeningScreen"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("OpeningScreen")->getTWidth(), theTextureMgr->getTexture("OpeningScreen")->getTHeight());
-	
+		Gameover = false;
+		Oneload = true;
 	}
 	break;
 	case gameState::playing: //When the player presses the "play button"
@@ -228,7 +236,34 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		spriteBkgd.setSpritePos({ 0, 0 });
 		spriteBkgd.setTexture(theTextureMgr->getTexture("ClosingScreen"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("ClosingScreen")->getTWidth(), theTextureMgr->getTexture("ClosingScreen")->getTHeight());
-	
+		
+	    
+		
+		
+		if (Checkscore < bottlesCollected && Oneload == true) //If The score laoded is smaller than the score achived in the session. it will Save the new score to the file.
+		{
+			ofstream Writefile("Files/Highscore.txt"); //Opening the file located in the game code.
+			if (Writefile.is_open())
+			{
+				Writefile << bottlesCollected; //Writes The score of the game to the file.
+				Writefile.close();
+			}
+			else
+			{
+				cout << "Unable to open";
+			}
+			Oneload = false; //This varible will Stop it from constantly opening the file.
+		}
+		
+			
+		
+			
+		
+		//CHECK IF THE HIGH SCORE IS HIGHER THAN THE STORED HIGH SCORE.
+		//IF SO OPEN A TEXT BOX ASKING FOR YOUR NAME.
+		//EMPTY THE FILE
+		//ADD NAME AND SCORE TO THE TEXT FILE.
+		//CLOSE THE FILE.
 	}
 	break;
 	case gameState::quit: //When the player exit the game.
@@ -255,7 +290,8 @@ void cGame::update()
 
 void cGame::update(double deltaTime)
 {
-	// CHeck Button clicked and change state
+	// Check Button clicked and change state (Bobby's Code)
+	//IMPORTANT - USED TO CHANGE THE STATE OF THE GAME.
 	if (theGameState == gameState::menu || theGameState == gameState::end)
 	{
 		theGameState = theButtonMgr->getBtn("exit_btn")->update(theGameState, gameState::quit, theAreaClicked);
@@ -264,26 +300,71 @@ void cGame::update(double deltaTime)
 	{
 		theGameState = theButtonMgr->getBtn("exit_btn")->update(theGameState, gameState::end, theAreaClicked);
 	}
+
+	if (theGameState == gameState::menu)
+	{
+		theGameState = theButtonMgr->getBtn("play_btn")->update(theGameState, gameState::playing, theAreaClicked);
+		Gameover = false;
+		//This code allows replayability.
+		if (theGameState == gameState::playing &&  Gameover == false)
+		{
+			//Hiding the sprites.
+			theTileMap.update(theShip.getMapPosition(), 1, 0.0f);
+			theTileMap.update(theBottle.getMapPosition(), 1, 0.0f);
+			theTileMap.update(thePirate.getMapPosition(), 1, 0.0f);
+			//Setting the accual starting points.
+			theShip.setMapPosition(spriteRandomX(gen), spriteRandomY(gen)); //Changed to fix the new game map.
+			theBottle.genRandomPos(theBottle.getMapPosition().R, theBottle.getMapPosition().C); //Changed from your code - should of been the bottle, NOT the ship.
+			thePirate.genRandomPos(thePirate.getMapPosition(), thePirate.getMapPosition());
+			//Updating the tilemap to accualy show the sprites.
+			theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
+			theTileMap.update(theBottle.getMapPosition(), 2, theBottle.getBottleRotation());
+			theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation()); 
+			bottlesCollected = 0;
+			//Updating the score.
+		
+		}
+	}
 	theGameState = theButtonMgr->getBtn("play_btn")->update(theGameState, gameState::playing, theAreaClicked);
 	theGameState = theButtonMgr->getBtn("menu_btn")->update(theGameState, gameState::menu, theAreaClicked);
 
-	
-	// Check if ship has collided with the bottle
-	if (theShip.getMapPosition() == theBottle.getMapPosition()) //When the ship touches the bottle
+	if (theGameState == gameState::playing)
 	{
-		theSoundMgr->getSnd("Collect")->play(0); //Plays the collect bottle collect sound on colision
-		bottlesCollected = bottlesCollected++; //Adds one to the score
-		
-		theBottle.genRandomPos(theShip.getMapPosition().R, theShip.getMapPosition().C); //NEW POSTITION
-		theTileMap.update(theBottle.getMapPosition(), 2, theBottle.getBottleRotation()); //UPDATE
-		theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation()); //The ship keeps its rotation when it collects a bottle
-		
-		strScore = gameTextList[gameTextList.size() - 1]; //updating the score
-		strScore += to_string(bottlesCollected).c_str();
-		theTextureMgr->deleteTexture("BottleCount");
-	}
 	
+		// Check if ship has collided with the bottle
+		if (theShip.getMapPosition() == theBottle.getMapPosition()) //When the ship touches the bottle
+		{
+			theSoundMgr->getSnd("Collect")->play(0); //Plays the collect bottle collect sound on colision
+			bottlesCollected = bottlesCollected++; //Adds one to the score
+			theBottle.genRandomPos(theShip.getMapPosition().R, theShip.getMapPosition().C); //NEW POSTITION
+			theTileMap.update(theBottle.getMapPosition(), 2, theBottle.getBottleRotation()); //UPDATE	
+			theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation()); //The ship keeps its rotation when it collects a bottle
+			//Updating the score.
+			strScore = gameTextList[gameTextList.size() - 1]; 
+			strScore += to_string(bottlesCollected).c_str();
+			theTextureMgr->deleteTexture("BottleCount");
+		}
+
+		if (thePirate.getMapPosition() == theBottle.getMapPosition())
+		{
+			theBottle.genRandomPos(thePirate.getMapPosition().R, thePirate.getMapPosition().C); //NEW POSTITION. UPDATES IN REFERNCE TO THE PIRATE
+			theTileMap.update(theBottle.getMapPosition(), 2, theBottle.getBottleRotation()); //UPDATE
+		}
+
+		if (theShip.getMapPosition() == thePirate.getMapPosition())
+		{
+			theGameState = gameState::end;
+		}
+		
+		if (Gameover == true)
+		{
+			
+			//theGameState = gameState::end;
+		}
+		
+
 	}
+}
 
 bool cGame::getInput(bool theLoop)
 {
@@ -354,52 +435,155 @@ bool cGame::getInput(bool theLoop)
 					break;
 				case SDLK_DOWN:
 				{
-					//DELETE THE SHIPS LAST LOCATION
-					theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
-					if (theShip.getMapPosition().R != 9) //UNLESS ITS ROW IS 9
+					if (theGameState == gameState::playing) //If you accualy in the game - prevents bugs
 					{
-						theShip.setShipRotation(180);
-						theShip.setMapPosition(theShip.getMapPosition().R + 1, theShip.getMapPosition().C);
+						//Hides the sprites for movement.
+						theTileMap.update(thePirate.getMapPosition(), 1, thePirate.getEnemyRotation());
+						theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
+						if (theShip.getMapPosition().R != 9) //UNLESS ITS ROW IS 9. IT WONT MOVE THE SHIP.
+						{
+							theShip.setShipRotation(180);
+							theShip.setMapPosition(theShip.getMapPosition().R + 1, theShip.getMapPosition().C);
+						}
+						thePirate.setEnemyRotation(thePirate.getEnemyRotation()+90);
+						if (thePirate.getMapPosition().R == 9 && thePirate.getMapPosition().C == 11) //PIRATE MOVEMENT.RESTTING BACK TO THE START
+						{
+							thePirate.setMapPosition(0, 0);
+							theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+						}
+						else
+						{
+							if (thePirate.getMapPosition().R == 9)//RESTTING BACK TO THE NEXT COLLUM
+							{
+								thePirate.setMapPosition(0, thePirate.getMapPosition().C + 1);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+							else //MOVING IT UP
+							{
+								thePirate.setMapPosition(thePirate.getMapPosition().R + 1, thePirate.getMapPosition().C);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+
+						}
+						theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());//Updating for ship rotation. ship rotation.
+
 					}
-					theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
 				}
 				break;
 
-				case SDLK_UP:
-				{
-					//DELETE THE SHIPS LAST LOCATION
-					theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
-					if (theShip.getMapPosition().R != 0) //UNLESS ITS ROW IS 0
-					{
-						theShip.setShipRotation(0);
-						theShip.setMapPosition(theShip.getMapPosition().R - 1, theShip.getMapPosition().C);
-					}
-					theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
-				}
-				break;
-				case SDLK_RIGHT:
+				case SDLK_UP: //THIS CODE IS SIMILAR TO THE SDLK_DOWN CODE BUT CHANGED TO MOVE UP.
 				{
 					
-					theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
-					if (theShip.getMapPosition().C != 11) //UNLESS ITS COLLUM IS 11
+					if (theGameState == gameState::playing)
 					{
-						theShip.setShipRotation(90);
-						theShip.setMapPosition(theShip.getMapPosition().R, theShip.getMapPosition().C + 1);
+
+						//DELETE THE SHIPS LAST LOCATION
+						theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
+						if (theShip.getMapPosition().R != 0) //UNLESS ITS ROW IS 0
+						{
+							theShip.setShipRotation(0);
+							theShip.setMapPosition(theShip.getMapPosition().R - 1, theShip.getMapPosition().C);
+						}
+						thePirate.setEnemyRotation(thePirate.getEnemyRotation() + 90);
+						//ENEMY MOVEMENT IS THE SAME FOR ALL MOVEMENT KEYS.
+						theTileMap.update(thePirate.getMapPosition(), 1, thePirate.getEnemyRotation());
+						if (thePirate.getMapPosition().R == 9 && thePirate.getMapPosition().C == 11)
+						{
+							thePirate.setMapPosition(0, 0);
+							theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+						}
+						else
+						{
+							if (thePirate.getMapPosition().R == 9)
+							{
+								thePirate.setMapPosition(0, thePirate.getMapPosition().C + 1);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+							else
+							{
+								thePirate.setMapPosition(thePirate.getMapPosition().R + 1, thePirate.getMapPosition().C);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+
+						}
+						theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
 					}
-					theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
+				}
+				break;
+				case SDLK_RIGHT://THIS CODE IS SIMMILAR TO SDLK_DOWN. BUT CHANGED TO MOVE RIGHT
+				{
+					if (theGameState == gameState::playing)
+					{
+
+						theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
+						if (theShip.getMapPosition().C != 11) //UNLESS ITS COLLUM IS 11
+						{
+							theShip.setShipRotation(90);
+							theShip.setMapPosition(theShip.getMapPosition().R, theShip.getMapPosition().C + 1);
+						}
+						thePirate.setEnemyRotation(thePirate.getEnemyRotation() + 90);
+						//ENEMY MOVEMENT IS THE SAME FOR ALL MOVEMENT KEYS
+						theTileMap.update(thePirate.getMapPosition(), 1, thePirate.getEnemyRotation());
+						if (thePirate.getMapPosition().R == 9 && thePirate.getMapPosition().C == 11)
+						{
+							thePirate.setMapPosition(0, 0);
+							theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+						}
+						else
+						{
+							if (thePirate.getMapPosition().R == 9)
+							{
+								thePirate.setMapPosition(0, thePirate.getMapPosition().C + 1);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+							else
+							{
+								thePirate.setMapPosition(thePirate.getMapPosition().R + 1, thePirate.getMapPosition().C);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+
+						}
+						theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
+					}
 				}
 				break;
 
-				case SDLK_LEFT:
+				case SDLK_LEFT://MOVEMENT IS SIMMILAR TO SDLK_DOWN.JUST CHANGED TO MOVE LEFT
 				{
-					//DELETE THE SHIPS LAST LOCATION
-					theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
-					if(theShip.getMapPosition().C != 0) //UNLESS ITS COLLUM IS 0
+					if (theGameState == gameState::playing)
 					{
-						theShip.setShipRotation(270);
-						theShip.setMapPosition(theShip.getMapPosition().R, theShip.getMapPosition().C - 1);
+
+						//DELETE THE SHIPS LAST LOCATION
+						theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
+						if (theShip.getMapPosition().C != 0) //UNLESS ITS COLLUM IS 0
+						{
+							theShip.setShipRotation(270);
+							theShip.setMapPosition(theShip.getMapPosition().R, theShip.getMapPosition().C - 1);
+						}
+						thePirate.setEnemyRotation(thePirate.getEnemyRotation() + 90);
+						//ENEMY MOVEMENT IS THE SAME FOR ALL MOVEMENT KEYS.
+						theTileMap.update(thePirate.getMapPosition(), 1, thePirate.getEnemyRotation());
+						if (thePirate.getMapPosition().R == 9 && thePirate.getMapPosition().C == 11)
+						{
+							thePirate.setMapPosition(0, 0);
+							theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+						}
+						else
+						{
+							if (thePirate.getMapPosition().R == 9)
+							{
+								thePirate.setMapPosition(0, thePirate.getMapPosition().C + 1);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+							else
+							{
+								thePirate.setMapPosition(thePirate.getMapPosition().R + 1, thePirate.getMapPosition().C);
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							}
+
+						}
+						theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
 					}
-					theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());
 				}
 				break;
 				case SDLK_SPACE:

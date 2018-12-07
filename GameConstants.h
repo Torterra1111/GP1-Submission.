@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <fstream>
 
 #include <SDL.h>
 // Image Texture loading library
@@ -30,7 +31,7 @@ using namespace std::chrono;
 using namespace std;
 
 //Define the string to appear in the top left corner of the window
-#define WINDOW_TITLE "Pirate Treasure"
+#define WINDOW_TITLE "Asteroid Collector game"
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 

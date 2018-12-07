@@ -41,6 +41,13 @@ private:
 	duration< double > deltaTime;
 	bool loop;
 
+	/* Let the computer pick a random number */
+	random_device rd;    // non-deterministic engine 
+	mt19937 gen{ rd() }; // deterministic engine. For most common uses, std::mersenne_twister_engine, fast and high-quality.
+	uniform_int_distribution<> spriteRandomX{ 0, 9 };
+	uniform_int_distribution<> spriteRandomY{ 0, 11 };
+	
+	
 	// Sprites for displaying background and rocket textures
 	cSprite spriteBkgd;
 	// game related variables
@@ -81,6 +88,10 @@ private:
 	cBottle theBottle;
 	int bottlesCollected;
 	string strScore;
+	cEnemy thePirate;
+	bool Gameover; 
+	int Checkscore; //Storage for the last high score.
+	bool Oneload; //Prevents massive memory use
 };
 
 #endif

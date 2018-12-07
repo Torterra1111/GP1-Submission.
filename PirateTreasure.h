@@ -12,3 +12,4 @@
 #include "cButton.h"
 #include "cShip.h"
 #include "cBottle.h"
+#include "cEnemy.h"

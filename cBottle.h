@@ -17,7 +17,7 @@ private:
 	random_device rd;    // non-deterministic engine 
 	mt19937 gen{ rd() }; // deterministic engine. For most common uses, std::mersenne_twister_engine, fast and high-quality.
 	uniform_int_distribution<> spriteRandomR{ 0, 9 }; //THIS IS FOR THE Y DIRECTION.
-	uniform_int_distribution<> spriteRandomC{ 0, 11 };//THIS IS FOR THE X DIRECTION.
+	uniform_int_distribution<> spriteRandomC{ 0, 9 };//THIS IS FOR THE X DIRECTION.
 
 public:
 	cBottle();

@@ -96,7 +96,7 @@ void cTileMap::renderGridLines(SDL_Renderer* theRenderer, SDL_Rect theRect, SDL_
 		tilePosXY.x = mapStartXY.x;
 		tilePosXY.y += theRect.h;
 	}
-	SDL_SetRenderDrawColor(theRenderer, 0, 255, 0, 0);
+	SDL_SetRenderDrawColor(theRenderer, 0, 100, 0, 0); //???
 }
 
 /*

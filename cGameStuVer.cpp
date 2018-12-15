@@ -63,9 +63,9 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	aRect = { 0, 0, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
 	aColour = { 0, 255, 255, 255 };
 	// Store the textures
-	btnNameList = { "exit_btn", "instructions_btn", "load_btn", "menu_btn", "play_btn", "save_btn", "settings_btn" }; //"Highscore_btn""
-	btnTexturesToUse = { "Images/Buttons/button_exit.png", "Images/Buttons/button_instructions.png", "Images/Buttons/button_load.png", "Images/Buttons/button_menu.png", "Images/Buttons/button_play.png", "Images/Buttons/button_save.png", "Images/Buttons/button_settings.png" }; //"Images/Buttons/Button_settings.png"
-	btnPos = { { 400, 375 }, { 400, 300 }, { 400, 300 }, { 500, 500 }, { 400, 300 }, { 740, 500 }, { 400, 300 } };
+	btnNameList = { "exit_btn", "instructions_btn", "load_btn", "menu_btn", "play_btn", "save_btn", "settings_btn","Highscore_btn" }; 
+	btnTexturesToUse = { "Images/Buttons/button_exit.png", "Images/Buttons/button_instructions.png", "Images/Buttons/button_load.png", "Images/Buttons/button_menu.png", "Images/Buttons/button_play.png", "Images/Buttons/button_save.png", "Images/Buttons/button_settings.png","Images/Buttons/Button_hscore.png" }; 
+	btnPos = { { 400, 375 }, { 400, 300 }, { 400, 300 }, { 500, 500 }, { 400, 300 }, { 740, 500 }, { 400, 300 },{ 400,325 } }; //POSTION OF BUTTON
 	for (unsigned int bCount = 0; bCount < btnNameList.size(); bCount++)
 	{
 		theTextureMgr->addTexture(btnNameList[bCount], btnTexturesToUse[bCount]);
@@ -88,8 +88,8 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		theFontMgr->addFont(fontList[fonts], fontsToUse[fonts], 48);
 	}
 	// Create text Textures
-	gameTextNames = { "TitleTxt", "CollectTxt", "InstructTxt", "ThanksTxt", "SeeYouTxt","BottleCount"};
-	gameTextList = { "Asteroid adventure", "Collect the Floating ore!", "Use the arrow keys to navigate the map.", "Looks like this session is over!", "Play again?", "Collected: "}; //Changed some of the text to suite my game
+	gameTextNames = { "TitleTxt", "CollectTxt", "InstructTxt", "ThanksTxt", "SeeYouTxt", "BottleCount", "Highscore"};
+	gameTextList = { "Asteroid adventure", "Collect the Floating ore!", "Use the arrow keys to navigate the map.", "Looks like the ore run is over!", "Go to menu?", "Collected: ", "Highscore: "}; //Changed some of the text to suite my game
 	for (unsigned int text = 0; text < gameTextNames.size(); text++)
 	{
 		if (text == 0)
@@ -102,16 +102,16 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		}
 	}
 	// Load game sounds
-	soundList = { "theme", "click","Collect" };  //IMPORTANT
-	soundTypes = { soundType::music, soundType::sfx,soundType::sfx };
-	soundsToUse = { "Audio/Theme/Kevin_MacLeod_-_Winter_Reflections.wav", "Audio/SFX/ClickOn.wav","Audio/SFX/Collect.wav" };
+	soundList = { "theme", "click","Collect", "Explosion"};  //Adds more soundeffects from my own use
+	soundTypes = { soundType::music, soundType::sfx,soundType::sfx,soundType::sfx };
+	soundsToUse = { "Audio/Theme/Kevin_MacLeod_-_Winter_Reflections.wav", "Audio/SFX/ClickOn.wav","Audio/SFX/Collect.wav","Audio/SFX/Explosion.wav" }; //linked my own sounds
 	for (unsigned int sounds = 0; sounds < soundList.size(); sounds++)
 	{
 		theSoundMgr->add(soundList[sounds], soundsToUse[sounds], soundTypes[sounds]);
 	}
 
 	theSoundMgr->getSnd("theme")->play(-1);
-	theTileMap.setMapStartXY({ 150,100 });
+	theTileMap.setMapStartXY({ 150,100 }); //Sets up where the map starts (in referance to the top left)
 
 	spriteBkgd.setSpritePos({ 0, 0 });
 	spriteBkgd.setTexture(theTextureMgr->getTexture("OpeningScreen"));
@@ -119,22 +119,31 @@ void cGame::initialise(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	
 	//SCORE SETUP
 	bottlesCollected = 0;
-	strScore = gameTextList[gameTextList.size() - 1];
+	strScore = gameTextList[gameTextList.size() - 2];
 	strScore += to_string(bottlesCollected).c_str();
 	theTextureMgr->deleteTexture("BottleCount");
 	
-	Gameover = false;
-
-	ifstream myfile("Files/Highscore.txt");
+	
+	ifstream myfile("Files/Highscore.txt"); //Opening the file.
 	if (myfile.is_open())
-		{
-			myfile >> Checkscore;
-			myfile.close();
-		}
-	else
+	{
+		myfile >> Checkscore; //Taking the score
+		myfile.close(); //Close that file!
+		//std::string test1 = std::to_string(Checkscore); //Thistakes the highscore Int and puts it into a string.
+		//MessageBoxA(NULL,  test1.c_str(), "This is the Highscore!", MB_OK);
+	}
+	else //if there is an issue it wont open - to prevent loading issues.
 	{
 		cout << "Unable to open";
 	}
+	
+	strHscore = gameTextList[gameTextList.size() - 1];
+	strHscore += to_string(Checkscore).c_str();
+	theTextureMgr->deleteTexture("Highscore");
+
+	Gameover = false;
+
+
 }
 
 	void cGame::run(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
@@ -175,15 +184,31 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 		theButtonMgr->getBtn("play_btn")->render(theRenderer, &theButtonMgr->getBtn("play_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("play_btn")->getSpritePos(), theButtonMgr->getBtn("play_btn")->getSpriteScale());
 		theButtonMgr->getBtn("exit_btn")->setSpritePos({ 400, 425 }); //Moved to fit my game.
 		theButtonMgr->getBtn("exit_btn")->render(theRenderer, &theButtonMgr->getBtn("exit_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("exit_btn")->getSpritePos(), theButtonMgr->getBtn("exit_btn")->getSpriteScale());
-		//theButtonMgr->getBtn("Highscore_btn")->render(theRenderer, &theButtonMgr->getBtn("Highscore_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("Highscore_btn")->getSpritePos(), theButtonMgr->getBtn("Highscore_btn")->getSpriteScale());
-		//^ Should Load the Highscore Button \/ Should Set its possition
-		// theButtonMgr->getBtn("Highscore_btn")->setSpritePos({ 400, 375 });
 		//This changes the background
 		spriteBkgd.setSpritePos({ 0, 0 });
 		spriteBkgd.setTexture(theTextureMgr->getTexture("OpeningScreen"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("OpeningScreen")->getTWidth(), theTextureMgr->getTexture("OpeningScreen")->getTHeight());
 		Gameover = false;
-		Oneload = true;
+		
+		if (Oneload == false) //Only will load this once.
+		{
+			ifstream myfile("Files/Highscore.txt"); //Opening the file.
+			if (myfile.is_open())
+			{
+				myfile >> Checkscore; //Taking the score everytime so if the user gets a new highscore it will be set to the new checkscore.
+				myfile.close(); //Close that file!
+				//std::string test1 = std::to_string(Checkscore); //Thistakes the highscore Int and puts it into a string.
+				//MessageBoxA(NULL,  test1.c_str(), "This is the Highscore!", MB_OK);
+			}
+			else
+			{
+				cout << "Unable to open";
+			}
+			Oneload = true; //This will flip so the file is ONLY opened once. having it open every second its in menu is very bad. 
+		}
+
+		
+
 	}
 	break;
 	case gameState::playing: //When the player presses the "play button"
@@ -212,27 +237,36 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	case gameState::end: //When the player presses the "exit" button
 	{
 		spriteBkgd.render(theRenderer, NULL, NULL, spriteBkgd.getSpriteScale());
+		//Title
 		tempTextTexture = theTextureMgr->getTexture("TitleTxt");
 		pos = { 10, 10, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+		//Thanks for playing txt set up
 		tempTextTexture = theTextureMgr->getTexture("ThanksTxt");
 		pos = { 50, 100, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+		//See you Txt set up
 		tempTextTexture = theTextureMgr->getTexture("SeeYouTxt");
 		pos = { 50, 175, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
 		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+		
 		theButtonMgr->getBtn("menu_btn")->setSpritePos({ 500, 500 });
 		theButtonMgr->getBtn("menu_btn")->render(theRenderer, &theButtonMgr->getBtn("menu_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("menu_btn")->getSpritePos(), theButtonMgr->getBtn("menu_btn")->getSpriteScale());
 		theButtonMgr->getBtn("exit_btn")->setSpritePos({ 500, 575 });
 		theButtonMgr->getBtn("exit_btn")->render(theRenderer, &theButtonMgr->getBtn("exit_btn")->getSpriteDimensions(), &theButtonMgr->getBtn("exit_btn")->getSpritePos(), theButtonMgr->getBtn("exit_btn")->getSpriteScale());
 		
 		//Adds the score to the end of the game
-		theTextureMgr->addTexture("BottleCount", theFontMgr->getFont("pirate")->createTextTexture(theRenderer, strScore.c_str(), textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 }));
-		tempTextTexture = theTextureMgr->getTexture("BottleCount");
-		pos = { 600, 10, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h };
-		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+		theTextureMgr->addTexture("BottleCount", theFontMgr->getFont("pirate")->createTextTexture(theRenderer, strScore.c_str(), textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 })); //THIS HERE IS IMPORTANT
+		tempTextTexture = theTextureMgr->getTexture("BottleCount"); //THIS HERE IS IMPORTANT
+		pos = { 600, 10, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h }; //THIS HERE IS IMPORTANT
+		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale); //THIS HERE IS IMPORTANT
 		
-		//This changes the background
+		//Highscore text
+		theTextureMgr->addTexture("Highscore", theFontMgr->getFont("pirate")->createTextTexture(theRenderer, strHscore.c_str(), textType::solid, { 44, 203, 112, 255 }, { 0, 0, 0, 0 })); //THIS HERE IS IMPORTANT
+		tempTextTexture = theTextureMgr->getTexture("Highscore"); //THIS HERE IS IMPORTANT
+		pos = { 60, 220, tempTextTexture->getTextureRect().w, tempTextTexture->getTextureRect().h }; //THIS HERE IS IMPORTANT
+		tempTextTexture->renderTexture(theRenderer, tempTextTexture->getTexture(), &tempTextTexture->getTextureRect(), &pos, scale);
+																																	 //This changes the background
 		spriteBkgd.setSpritePos({ 0, 0 });
 		spriteBkgd.setTexture(theTextureMgr->getTexture("ClosingScreen"));
 		spriteBkgd.setSpriteDimensions(theTextureMgr->getTexture("ClosingScreen")->getTWidth(), theTextureMgr->getTexture("ClosingScreen")->getTHeight());
@@ -240,17 +274,17 @@ void cGame::render(SDL_Window* theSDLWND, SDL_Renderer* theRenderer)
 	    
 		
 		
-		if (Checkscore < bottlesCollected && Oneload == true) //If The score laoded is smaller than the score achived in the session. it will Save the new score to the file.
+		if (Checkscore < bottlesCollected && Oneload == true) //If The score you got is higher than the last score saved. it will Save the new score to the file.
 		{
 			ofstream Writefile("Files/Highscore.txt"); //Opening the file located in the game code.
-			if (Writefile.is_open())
+			if (Writefile.is_open()) //if it can be accually open (file is found)
 			{
 				Writefile << bottlesCollected; //Writes The score of the game to the file.
-				Writefile.close();
+				Writefile.close(); //Close that file!
 			}
 			else
 			{
-				cout << "Unable to open";
+				cout << "Unable to open"; //Stopping very bad issues.
 			}
 			Oneload = false; //This varible will Stop it from constantly opening the file.
 		}
@@ -295,15 +329,18 @@ void cGame::update(double deltaTime)
 	if (theGameState == gameState::menu || theGameState == gameState::end)
 	{
 		theGameState = theButtonMgr->getBtn("exit_btn")->update(theGameState, gameState::quit, theAreaClicked);
+		//If the user clicks the button - 
 	}
 	else
 	{
-		theGameState = theButtonMgr->getBtn("exit_btn")->update(theGameState, gameState::end, theAreaClicked);
+		theGameState = theButtonMgr->getBtn("exit_btn")->update(theGameState, gameState::end, theAreaClicked); // Change update
 	}
+	
+
 
 	if (theGameState == gameState::menu)
 	{
-		theGameState = theButtonMgr->getBtn("play_btn")->update(theGameState, gameState::playing, theAreaClicked);
+		theGameState = theButtonMgr->getBtn("play_btn")->update(theGameState, gameState::playing, theAreaClicked); //When the player clicks the play button
 		Gameover = false;
 		//This code allows replayability.
 		if (theGameState == gameState::playing &&  Gameover == false)
@@ -340,7 +377,7 @@ void cGame::update(double deltaTime)
 			theTileMap.update(theBottle.getMapPosition(), 2, theBottle.getBottleRotation()); //UPDATE	
 			theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation()); //The ship keeps its rotation when it collects a bottle
 			//Updating the score.
-			strScore = gameTextList[gameTextList.size() - 1]; 
+			strScore = gameTextList[gameTextList.size() - 2]; 
 			strScore += to_string(bottlesCollected).c_str();
 			theTextureMgr->deleteTexture("BottleCount");
 		}
@@ -349,7 +386,8 @@ void cGame::update(double deltaTime)
 		{
 			theBottle.genRandomPos(thePirate.getMapPosition().R, thePirate.getMapPosition().C); //NEW POSTITION. UPDATES IN REFERNCE TO THE PIRATE
 			theTileMap.update(theBottle.getMapPosition(), 2, theBottle.getBottleRotation()); //UPDATE
-		}
+			theSoundMgr->getSnd("Explosion")->play(0);
+			}
 
 		if (theShip.getMapPosition() == thePirate.getMapPosition())
 		{
@@ -442,30 +480,30 @@ bool cGame::getInput(bool theLoop)
 						theTileMap.update(theShip.getMapPosition(), 1, theShip.getShipRotation());
 						if (theShip.getMapPosition().R != 9) //UNLESS ITS ROW IS 9. IT WONT MOVE THE SHIP.
 						{
-							theShip.setShipRotation(180);
-							theShip.setMapPosition(theShip.getMapPosition().R + 1, theShip.getMapPosition().C);
+							theShip.setShipRotation(180); //Makes it point Down
+							theShip.setMapPosition(theShip.getMapPosition().R + 1, theShip.getMapPosition().C); //Moves it down
 						}
 						thePirate.setEnemyRotation(thePirate.getEnemyRotation()+90);
 						if (thePirate.getMapPosition().R == 9 && thePirate.getMapPosition().C == 11) //PIRATE MOVEMENT.RESTTING BACK TO THE START
 						{
-							thePirate.setMapPosition(0, 0);
-							theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+							thePirate.setMapPosition(0, 0); //Back to the start
+							theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation()); //Updating its location
 						}
 						else
 						{
 							if (thePirate.getMapPosition().R == 9)//RESTTING BACK TO THE NEXT COLLUM
 							{
-								thePirate.setMapPosition(0, thePirate.getMapPosition().C + 1);
-								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+								thePirate.setMapPosition(0, thePirate.getMapPosition().C + 1); //Makes it moveto the next collum
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation()); //Updating its location
 							}
-							else //MOVING IT UP
+							else //MOVING IT DOWN
 							{
-								thePirate.setMapPosition(thePirate.getMapPosition().R + 1, thePirate.getMapPosition().C);
-								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation());
+								thePirate.setMapPosition(thePirate.getMapPosition().R + 1, thePirate.getMapPosition().C); //Moving it down 1
+								theTileMap.update(thePirate.getMapPosition(), 7, thePirate.getEnemyRotation()); //Updating the screen.
 							}
 
 						}
-						theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());//Updating for ship rotation. ship rotation.
+						theTileMap.update(theShip.getMapPosition(), 3, theShip.getShipRotation());//Updating for ship rotation. 
 
 					}
 				}

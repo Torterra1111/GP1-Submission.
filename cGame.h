@@ -88,10 +88,11 @@ private:
 	cBottle theBottle;
 	int bottlesCollected;
 	string strScore;
+	string strHscore;
 	cEnemy thePirate;
 	bool Gameover; 
 	int Checkscore; //Storage for the last high score.
-	bool Oneload; //Prevents massive memory use
+	bool Oneload = false; //Prevents massive memory use.
 };
 
 #endif
